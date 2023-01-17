@@ -6,11 +6,11 @@ import {
   ContentChildren,
   EventEmitter,
   HostListener,
-  Input,
+  Input, OnDestroy,
   Output,
   QueryList
 } from '@angular/core';
-import {merge, startWith, switchMap} from 'rxjs';
+import {merge, startWith, Subject, switchMap, takeUntil} from 'rxjs';
 import {OptionComponent} from './option/option.component';
 
 @Component({
@@ -26,7 +26,7 @@ import {OptionComponent} from './option/option.component';
     ])
   ]
 })
-export class SelectComponent implements AfterContentInit {
+export class SelectComponent implements AfterContentInit, OnDestroy {
 
   @Input()
   label = ''
@@ -50,6 +50,9 @@ export class SelectComponent implements AfterContentInit {
   readonly opened = new EventEmitter()
 
   @Output()
+  readonly selectionChanged = new EventEmitter()
+
+  @Output()
   readonly closed = new EventEmitter()
 
   @HostListener('click')
@@ -58,6 +61,7 @@ export class SelectComponent implements AfterContentInit {
   }
 
   isOpen = false
+  unsubscribe$ = new Subject<void>()
 
   close() {
     this.isOpen = false
@@ -69,16 +73,24 @@ export class SelectComponent implements AfterContentInit {
   ngAfterContentInit() {
     this.highlightSelectedOptions(this.value)
 
-    this.selectModel.changed.subscribe(values => {
+    this.selectModel.changed.pipe(takeUntil(this.unsubscribe$)).subscribe(values => {
       values.removed.forEach(rv => this.findOptionsByValue(rv)?.deselect())
     })
-    
+
     this.options.changes.pipe(
       startWith<QueryList<OptionComponent>>(this.options),
-      switchMap(options => merge(...options.map(o => o.selected)))
-    ).subscribe(selectedOptions => {
-      selectedOptions.value && this.selectModel.select(selectedOptions.value)
-    })
+      switchMap(options => merge(...options.map(o => o.selected))),
+      takeUntil(this.unsubscribe$)
+    ).subscribe(selectedOptions => this.handleSelection(selectedOptions))
+  }
+
+  private handleSelection(options: OptionComponent) {
+    if (options.value) {
+      options.value && this.selectModel.toggle(options.value)
+      this.selectionChanged.emit(this.value)
+    }
+
+    this.close()
   }
 
   private highlightSelectedOptions(value: string | null) {
@@ -96,6 +108,11 @@ export class SelectComponent implements AfterContentInit {
     if (fromState === null && toState === 'void' && !this.isOpen) {
       this.closed.emit()
     }
+  }
+
+  ngOnDestroy() {
+    this.unsubscribe$.next()
+    this.unsubscribe$.complete()
   }
 
 
