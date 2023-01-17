@@ -2,15 +2,17 @@ import {animate, AnimationEvent, state, style, transition, trigger} from '@angul
 import {SelectionModel} from '@angular/cdk/collections';
 import {
   AfterContentInit,
+  ChangeDetectionStrategy, ChangeDetectorRef,
   Component,
   ContentChildren,
   EventEmitter,
   HostListener,
-  Input, OnDestroy,
+  Input,
+  OnDestroy,
   Output,
   QueryList
 } from '@angular/core';
-import {merge, startWith, Subject, switchMap, takeUntil} from 'rxjs';
+import {merge, startWith, Subject, switchMap, takeUntil, tap} from 'rxjs';
 import {OptionComponent} from './option/option.component';
 
 @Component({
@@ -24,7 +26,8 @@ import {OptionComponent} from './option/option.component';
       transition(':enter', [animate('320ms cubic-bezier(0, 1, 0.45, 1.34)')]),
       transition(':leave', [animate('420ms cubic-bezier(0.88, -0.7, 0.86, 0.85)')])
     ])
-  ]
+  ],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class SelectComponent<T> implements AfterContentInit, OnDestroy {
 
@@ -70,9 +73,10 @@ export class SelectComponent<T> implements AfterContentInit, OnDestroy {
   @ContentChildren(OptionComponent, {descendants: true})
   options!: QueryList<OptionComponent<T>>
 
-  ngAfterContentInit() {
-    this.highlightSelectedOptions(this.value)
+  constructor(private cdr: ChangeDetectorRef) {
+  }
 
+  ngAfterContentInit() {
     this.selectModel.changed.pipe(takeUntil(this.unsubscribe$)).subscribe(values => {
       values.removed.forEach(rv => this.findOptionsByValue(rv)?.deselect())
       values.added.forEach(av => this.findOptionsByValue(av)?.highLightAsSelected())
@@ -80,6 +84,7 @@ export class SelectComponent<T> implements AfterContentInit, OnDestroy {
 
     this.options.changes.pipe(
       startWith<QueryList<OptionComponent<T>>>(this.options),
+      tap(() => queueMicrotask(() => this.highlightSelectedOptions(this.value))),
       switchMap(options => merge(...options.map(o => o.selected))),
       takeUntil(this.unsubscribe$)
     ).subscribe(selectedOptions => this.handleSelection(selectedOptions))
@@ -92,6 +97,7 @@ export class SelectComponent<T> implements AfterContentInit, OnDestroy {
     }
 
     this.close()
+    this.cdr.markForCheck()
   }
 
   private highlightSelectedOptions(value: T | null) {
@@ -115,6 +121,4 @@ export class SelectComponent<T> implements AfterContentInit, OnDestroy {
     this.unsubscribe$.next()
     this.unsubscribe$.complete()
   }
-
-
 }
