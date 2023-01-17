@@ -18,6 +18,6 @@
   (backdropClick)="close()"
   (detach)="close()">
   <div class="panel" [@dropDown] (@dropDown.done)="onPanelAnimationDone($event)">
-    pew
+    <ng-content></ng-content>
   </div>
 </ng-template>
