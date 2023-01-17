@@ -1,4 +1,9 @@
-<app-select label="Pick the user" [value]="users[0]" [displayWith]="displayWithFn">
+<app-select
+  label="Pick the user"
+  [value]="selectValue"
+  [displayWith]="displayWithFn"
+  [compareWith]="compareWithFn"
+>
   <app-option
     *ngFor="let user of users"
     [value]="user"

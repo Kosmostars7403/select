@@ -7,10 +7,10 @@ import {
   ContentChildren,
   EventEmitter,
   HostListener,
-  Input,
+  Input, OnChanges,
   OnDestroy,
   Output,
-  QueryList
+  QueryList, SimpleChanges
 } from '@angular/core';
 import {merge, startWith, Subject, switchMap, takeUntil, tap} from 'rxjs';
 import {OptionComponent} from './option/option.component';
@@ -29,13 +29,16 @@ import {OptionComponent} from './option/option.component';
   ],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class SelectComponent<T> implements AfterContentInit, OnDestroy {
+export class SelectComponent<T> implements OnChanges, AfterContentInit, OnDestroy {
 
   @Input()
   label = ''
 
   @Input()
   displayWith: ((value: T) => string | number) | null = null
+
+  @Input()
+  compareWith: ((v1: T | null, v2: T | null) => boolean) = (v1, v2) => v1 === v2
 
   @Input()
   set value(value: T | null) {
@@ -70,8 +73,6 @@ export class SelectComponent<T> implements AfterContentInit, OnDestroy {
   unsubscribe$ = new Subject<void>()
 
   protected get displayValue() {
-    console.log(this.displayWith)
-    console.log(this.value)
     if (this.displayWith && this.value) {
       return this.displayWith(this.value)
     }
@@ -86,6 +87,13 @@ export class SelectComponent<T> implements AfterContentInit, OnDestroy {
   options!: QueryList<OptionComponent<T>>
 
   constructor(private cdr: ChangeDetectorRef) {
+  }
+
+  ngOnChanges(changes: SimpleChanges) {
+    if (changes['compareWith']) {
+      this.selectModel.compareWith = changes['compareWith'].currentValue
+      this.highlightSelectedOptions(this.value)
+    }
   }
 
   ngAfterContentInit() {
@@ -117,7 +125,7 @@ export class SelectComponent<T> implements AfterContentInit, OnDestroy {
   }
 
   private findOptionsByValue(value: T | null) {
-    return this.options && this.options.find(o => o.value === value)
+    return this.options && this.options.find(o => this.compareWith(o.value, value))
   }
 
   onPanelAnimationDone({fromState, toState}: AnimationEvent) {
