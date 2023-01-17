@@ -70,6 +70,9 @@ export class SelectComponent<T> implements OnChanges, AfterContentInit, OnDestro
   }
 
   isOpen = false
+
+  private optionMap = new Map<T | null, OptionComponent<T>>();
+
   unsubscribe$ = new Subject<void>()
 
   protected get displayValue() {
@@ -92,19 +95,20 @@ export class SelectComponent<T> implements OnChanges, AfterContentInit, OnDestro
   ngOnChanges(changes: SimpleChanges) {
     if (changes['compareWith']) {
       this.selectModel.compareWith = changes['compareWith'].currentValue
-      this.highlightSelectedOptions(this.value)
+      this.highlightSelectedOptions()
     }
   }
 
   ngAfterContentInit() {
     this.selectModel.changed.pipe(takeUntil(this.unsubscribe$)).subscribe(values => {
-      values.removed.forEach(rv => this.findOptionsByValue(rv)?.deselect())
-      values.added.forEach(av => this.findOptionsByValue(av)?.highLightAsSelected())
+      values.removed.forEach(rv => this.optionMap.get(rv)?.deselect())
+      values.added.forEach(av => this.optionMap.get(av)?.highLightAsSelected())
     })
 
     this.options.changes.pipe(
       startWith<QueryList<OptionComponent<T>>>(this.options),
-      tap(() => queueMicrotask(() => this.highlightSelectedOptions(this.value))),
+      tap(() => this.refreshOptionsMap()),
+      tap(() => queueMicrotask(() => this.highlightSelectedOptions())),
       switchMap(options => merge(...options.map(o => o.selected))),
       takeUntil(this.unsubscribe$)
     ).subscribe(selectedOptions => this.handleSelection(selectedOptions))
@@ -120,8 +124,18 @@ export class SelectComponent<T> implements OnChanges, AfterContentInit, OnDestro
     this.cdr.markForCheck()
   }
 
-  private highlightSelectedOptions(value: T | null) {
-    this.findOptionsByValue(value)?.highLightAsSelected()
+  private refreshOptionsMap() {
+    this.optionMap.clear();
+    this.options.forEach(o => this.optionMap.set(o.value, o));
+  }
+
+  private highlightSelectedOptions() {
+    const valuesWithUpdatedReferences = this.selectModel.selected.map(value => {
+      const correspondingOption = this.findOptionsByValue(value);
+      return correspondingOption ? correspondingOption.value! : value;
+    });
+    this.selectModel.clear();
+    this.selectModel.select(...valuesWithUpdatedReferences);
   }
 
   private findOptionsByValue(value: T | null) {
