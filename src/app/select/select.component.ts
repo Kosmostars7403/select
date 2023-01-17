@@ -1,5 +1,15 @@
 import {animate, AnimationEvent, state, style, transition, trigger} from '@angular/animations';
-import {Component, EventEmitter, HostListener, Input, Output} from '@angular/core';
+import {
+  AfterContentInit,
+  Component,
+  ContentChildren,
+  EventEmitter,
+  HostListener,
+  Input,
+  Output,
+  QueryList
+} from '@angular/core';
+import {OptionComponent} from './option/option.component';
 
 @Component({
   selector: 'app-select',
@@ -14,7 +24,7 @@ import {Component, EventEmitter, HostListener, Input, Output} from '@angular/cor
     ])
   ]
 })
-export class SelectComponent {
+export class SelectComponent implements AfterContentInit {
 
   @Input()
   label = ''
@@ -39,13 +49,30 @@ export class SelectComponent {
     this.isOpen = false
   }
 
+  @ContentChildren(OptionComponent, {descendants: true})
+  options!: QueryList<OptionComponent>
+
+  ngAfterContentInit() {
+    this.highlightSelectedOptions(this.value)
+  }
+
+  private highlightSelectedOptions(value: string | null) {
+    this.findOptionsByValue(value)?.highLightAsSelected()
+  }
+
+  private findOptionsByValue(value: string | null) {
+    return this.options && this.options.find(o => o.value === value)
+  }
+
   onPanelAnimationDone({ fromState, toState }: AnimationEvent) {
     if (fromState === 'void' && toState === null && this.isOpen) {
-      this.opened.emit();
+      this.opened.emit()
     }
     if (fromState === null && toState === 'void' && !this.isOpen) {
-      this.closed.emit();
+      this.closed.emit()
     }
   }
+
+
 
 }

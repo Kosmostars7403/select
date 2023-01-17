@@ -20,13 +20,17 @@ export class OptionComponent {
   selected = new EventEmitter()
 
   @HostListener('click')
-  select() {
-    this.isSelected = true
+  protected select() {
+    this.highLightAsSelected()
     this.selected.emit(this)
   }
 
   @HostBinding('class.selected')
   protected isSelected = false
+
+  highLightAsSelected() {
+    this.isSelected = true
+  }
 
   deselect() {
     this.isSelected = false
