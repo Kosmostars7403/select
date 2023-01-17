@@ -1,4 +1,4 @@
-import {Component, Input} from '@angular/core';
+import {Component, HostListener, Input} from '@angular/core';
 
 @Component({
   selector: 'app-select',
@@ -8,8 +8,20 @@ import {Component, Input} from '@angular/core';
 export class SelectComponent {
 
   @Input()
-  label = '';
+  label = ''
 
-  value = ''
+  @Input()
+  value: string | null = ''
+
+  @HostListener('click')
+  open() {
+    this.isOpen = true
+  }
+
+  isOpen = false
+
+  close() {
+    this.isOpen = false
+  }
 
 }

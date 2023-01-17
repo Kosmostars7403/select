@@ -1,3 +1,4 @@
+import {OverlayModule} from '@angular/cdk/overlay';
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { SelectComponent } from './select.component';
@@ -12,7 +13,8 @@ import { SelectComponent } from './select.component';
     SelectComponent
   ],
   imports: [
-    CommonModule
+    CommonModule,
+    OverlayModule
   ]
 })
 export class SelectModule { }
