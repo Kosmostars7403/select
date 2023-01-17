@@ -22,4 +22,8 @@ export class AppComponent {
     new User(9, 'Richard Feynman', 'richard', 'USA'),
     new User(10, 'Ernest Rutherford', 'ernest', 'New Zealand'),
   ];
+
+  displayWithFn(user: User) {
+    return user.name
+  }
 }

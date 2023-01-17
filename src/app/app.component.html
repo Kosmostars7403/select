@@ -1,7 +1,7 @@
-<app-select label="Pick the user" value="1">
+<app-select label="Pick the user" [value]="users[0]" [displayWith]="displayWithFn">
   <app-option
     *ngFor="let user of users"
-    [value]="user.nickname"
+    [value]="user"
   >{{ user.name }}</app-option>
 
 </app-select>

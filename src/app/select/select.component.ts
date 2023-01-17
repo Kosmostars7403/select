@@ -35,6 +35,9 @@ export class SelectComponent<T> implements AfterContentInit, OnDestroy {
   label = ''
 
   @Input()
+  displayWith: ((value: T) => string | number) | null = null
+
+  @Input()
   set value(value: T | null) {
     this.selectModel.clear()
 
@@ -65,6 +68,15 @@ export class SelectComponent<T> implements AfterContentInit, OnDestroy {
 
   isOpen = false
   unsubscribe$ = new Subject<void>()
+
+  protected get displayValue() {
+    console.log(this.displayWith)
+    console.log(this.value)
+    if (this.displayWith && this.value) {
+      return this.displayWith(this.value)
+    }
+    return this.value
+  }
 
   close() {
     this.isOpen = false
