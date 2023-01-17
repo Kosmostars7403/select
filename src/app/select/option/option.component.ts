@@ -1,12 +1,5 @@
-import {
-  ChangeDetectionStrategy, ChangeDetectorRef,
-  Component,
-  EventEmitter,
-  HostBinding,
-  HostListener,
-  Input,
-  Output
-} from '@angular/core';
+import { Highlightable } from '@angular/cdk/a11y';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, EventEmitter, HostBinding, HostListener, Input, OnInit, Output } from '@angular/core';
 
 @Component({
   selector: 'app-option',
@@ -14,39 +7,60 @@ import {
   styleUrls: ['./option.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class OptionComponent<T> {
-  @Input()
-  value: T | null = null
+export class OptionComponent<T> implements OnInit, Highlightable {
 
   @Input()
-  disabledReason = ''
+  value: T | null = null;
+
+  @Input()
+  disabledReason = '';
 
   @Input()
   @HostBinding('class.disabled')
-  disabled = false
+  disabled = false;
 
   @Output()
-  selected = new EventEmitter()
+  selected = new EventEmitter<OptionComponent<T>>();
 
   @HostListener('click')
   protected select() {
-    this.highLightAsSelected()
-    this.selected.emit(this)
+    if (!this.disabled) {
+      this.highlightAsSelected();
+      this.selected.emit(this);
+    }
   }
-
   @HostBinding('class.selected')
-  protected isSelected = false
+  protected isSelected = false;
 
-  constructor(private cdr: ChangeDetectorRef) {
+  @HostBinding('class.active')
+  protected isActive = false;
+
+  constructor(private cd: ChangeDetectorRef, private el: ElementRef<HTMLElement>) { }
+
+  setActiveStyles(): void {
+    this.isActive = true;
+    this.cd.markForCheck();
+  }
+  setInactiveStyles(): void {
+    this.isActive = false;
+    this.cd.markForCheck();
   }
 
-  highLightAsSelected() {
-    this.isSelected = true
-    this.cdr.markForCheck()
+  scrollIntoView(options?: ScrollIntoViewOptions) {
+    this.el.nativeElement.scrollIntoView(options);
+  }
+
+  ngOnInit(): void {
+  }
+
+  highlightAsSelected() {
+    this.isSelected = true;
+    this.cd.markForCheck();
   }
 
   deselect() {
-    this.isSelected = false
-    this.cdr.markForCheck()
+    this.isSelected = false;
+    this.cd.markForCheck();
   }
+
 }
