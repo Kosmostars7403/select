@@ -5,9 +5,9 @@ import {Component, EventEmitter, HostBinding, HostListener, Input, Output} from 
   templateUrl: './option.component.html',
   styleUrls: ['./option.component.scss']
 })
-export class OptionComponent {
+export class OptionComponent<T> {
   @Input()
-  value: string | null = null
+  value: T | null = null
 
   @Input()
   disabledReason = ''

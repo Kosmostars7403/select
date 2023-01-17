@@ -26,13 +26,13 @@ import {OptionComponent} from './option/option.component';
     ])
   ]
 })
-export class SelectComponent implements AfterContentInit, OnDestroy {
+export class SelectComponent<T> implements AfterContentInit, OnDestroy {
 
   @Input()
   label = ''
 
   @Input()
-  set value(value: string | null) {
+  set value(value: T | null) {
     this.selectModel.clear()
 
     if (value) {
@@ -44,7 +44,7 @@ export class SelectComponent implements AfterContentInit, OnDestroy {
     return this.selectModel.selected[0] || null
   }
 
-  private selectModel = new SelectionModel<string>()
+  private selectModel = new SelectionModel<T>()
 
   @Output()
   readonly opened = new EventEmitter()
@@ -68,7 +68,7 @@ export class SelectComponent implements AfterContentInit, OnDestroy {
   }
 
   @ContentChildren(OptionComponent, {descendants: true})
-  options!: QueryList<OptionComponent>
+  options!: QueryList<OptionComponent<T>>
 
   ngAfterContentInit() {
     this.highlightSelectedOptions(this.value)
@@ -79,13 +79,13 @@ export class SelectComponent implements AfterContentInit, OnDestroy {
     })
 
     this.options.changes.pipe(
-      startWith<QueryList<OptionComponent>>(this.options),
+      startWith<QueryList<OptionComponent<T>>>(this.options),
       switchMap(options => merge(...options.map(o => o.selected))),
       takeUntil(this.unsubscribe$)
     ).subscribe(selectedOptions => this.handleSelection(selectedOptions))
   }
 
-  private handleSelection(options: OptionComponent) {
+  private handleSelection(options: OptionComponent<T>) {
     if (options.value) {
       options.value && this.selectModel.toggle(options.value)
       this.selectionChanged.emit(this.value)
@@ -94,11 +94,11 @@ export class SelectComponent implements AfterContentInit, OnDestroy {
     this.close()
   }
 
-  private highlightSelectedOptions(value: string | null) {
+  private highlightSelectedOptions(value: T | null) {
     this.findOptionsByValue(value)?.highLightAsSelected()
   }
 
-  private findOptionsByValue(value: string | null) {
+  private findOptionsByValue(value: T | null) {
     return this.options && this.options.find(o => o.value === value)
   }
 
