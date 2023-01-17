@@ -9,6 +9,13 @@ export class OptionComponent {
   @Input()
   value: string | null = null
 
+  @Input()
+  disabledReason = ''
+
+  @Input()
+  @HostBinding('class.disabled')
+  disabled = false
+
   @Output()
   selected = new EventEmitter()
 
