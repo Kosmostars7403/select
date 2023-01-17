@@ -1,4 +1,5 @@
 import {animate, AnimationEvent, state, style, transition, trigger} from '@angular/animations';
+import {SelectionModel} from '@angular/cdk/collections';
 import {
   AfterContentInit,
   Component,
@@ -9,6 +10,7 @@ import {
   Output,
   QueryList
 } from '@angular/core';
+import {merge, startWith, switchMap} from 'rxjs';
 import {OptionComponent} from './option/option.component';
 
 @Component({
@@ -30,7 +32,19 @@ export class SelectComponent implements AfterContentInit {
   label = ''
 
   @Input()
-  value: string | null = ''
+  set value(value: string | null) {
+    this.selectModel.clear()
+
+    if (value) {
+      this.selectModel.select(value)
+    }
+  }
+
+  get value() {
+    return this.selectModel.selected[0] || null
+  }
+
+  private selectModel = new SelectionModel<string>()
 
   @Output()
   readonly opened = new EventEmitter()
@@ -54,6 +68,17 @@ export class SelectComponent implements AfterContentInit {
 
   ngAfterContentInit() {
     this.highlightSelectedOptions(this.value)
+
+    this.selectModel.changed.subscribe(values => {
+      values.removed.forEach(rv => this.findOptionsByValue(rv)?.deselect())
+    })
+    
+    this.options.changes.pipe(
+      startWith<QueryList<OptionComponent>>(this.options),
+      switchMap(options => merge(...options.map(o => o.selected)))
+    ).subscribe(selectedOptions => {
+      selectedOptions.value && this.selectModel.select(selectedOptions.value)
+    })
   }
 
   private highlightSelectedOptions(value: string | null) {
@@ -64,7 +89,7 @@ export class SelectComponent implements AfterContentInit {
     return this.options && this.options.find(o => o.value === value)
   }
 
-  onPanelAnimationDone({ fromState, toState }: AnimationEvent) {
+  onPanelAnimationDone({fromState, toState}: AnimationEvent) {
     if (fromState === 'void' && toState === null && this.isOpen) {
       this.opened.emit()
     }
@@ -72,7 +97,6 @@ export class SelectComponent implements AfterContentInit {
       this.closed.emit()
     }
   }
-
 
 
 }
